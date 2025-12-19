@@ -52,4 +52,48 @@ export const createMessage = async (req, res, next) => {
     }
 }
 
+export const allUserChats = async (req, res, next) => {
+    try {
+        const userId = req.userId;
 
+        const chats = await Chat.find({user: {$eq: userId}})
+
+        if(chats.length == 0){
+            return res.status(400).json({message: "Chats not found"})
+        }
+        
+        return res.status(200).json(chats)
+    } catch (error) {
+       return res.status(500).json(error)
+    }
+}
+
+export const chatMessage = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+
+        if (!chatId) {
+            return res.status(400).json({ message: "Chat ID is required" });
+        }
+
+        const chat = await Chat.findById(chatId)
+            .populate("messages")
+            .sort({ updatedAt: -1 });
+
+        if (!chat) {
+            return res.status(404).json({ message: "Chat not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            chat
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
