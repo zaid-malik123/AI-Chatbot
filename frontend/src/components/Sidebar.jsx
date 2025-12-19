@@ -2,46 +2,16 @@ import { RiChatVoiceAiLine } from "react-icons/ri";
 import { BsReverseLayoutSidebarReverse } from "react-icons/bs";
 import { RxPencil2 } from "react-icons/rx";
 import { IoIosSearch } from "react-icons/io";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Sidebar = () => {
-  const chat = [
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
-    {name: "What is AI "},
-    {name: "What is JS"}, 
-    {name: "What is Data type"},
+  const navigate = useNavigate()  
+   const { chatId } = useParams();
 
+   const chat = [
+    {name: "What is AI "},
+    {name: "What is JS"}, 
+    {name: "What is Data type"},
 
   ]  
   return (
@@ -70,12 +40,18 @@ const Sidebar = () => {
            <div className="mt-5 flex flex-col gap-3 ">
               <h5 className="text-white/60 font-[400] text-sm ml-5">Your Chats</h5>
                <div>
-                  {chat.map((chat) => (
-                    <div className="flex items-center gap-3 px-5 py-2  hover:bg-[#212121] hover:rounded-xl">
-        
-                <div className="text-white font-[200] text-sm">{chat.name}</div>
-             </div>
-                  ))}
+                           {chat.map((chat, idx) => {
+                              const isActive = String(idx) === String(chatId);
+                              return (
+                                 <div
+                                    key={idx}
+                                    onClick={() => navigate(`/c/${idx}`)}
+                                    className={`flex items-center gap-3 px-5 py-2 hover:rounded-xl ${isActive ? 'bg-[#212121]' : ''}`}
+                                 >
+                                    <div className="text-white font-[200] text-sm">{chat.name}</div>
+                                 </div>
+                              );
+                           })}
                </div> 
            </div>
 
