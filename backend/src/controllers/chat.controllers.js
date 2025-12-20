@@ -22,35 +22,35 @@ try {
 }
 }
 
-export const createMessage = async (req, res, next) => {
-    try {
-        const {message} = req.body;
+// export const createMessage = async (req, res, next) => {
+//     try {
+//         const {message} = req.body;
 
-        const {chatId} = req.params;
-        if(!message){
-            return res.status(400).json("message is required")
-        }
+//         const {chatId} = req.params;
+//         if(!message){
+//             return res.status(400).json("message is required")
+//         }
         
-        const chat = await Chat.findById(chatId);
+//         const chat = await Chat.findById(chatId);
 
-        if(!chat){
-            return res.status(400).json("chat is required")
-        }
+//         if(!chat){
+//             return res.status(400).json("chat is required")
+//         }
         
-        const newMessage = await Message.create({
-            message,
-            chat: chatId
-        })
+//         const newMessage = await Message.create({
+//             message,
+//             chat: chatId
+//         })
         
-        chat.messages.push(newMessage)
+//         chat.messages.push(newMessage)
 
-        await chat.save()
+//         await chat.save()
 
-        return res.status(201).json({newMessage, chatId})
-    } catch (error) {
-       return res.status(500).json(error)
-    }
-}
+//         return res.status(201).json({newMessage, chatId})
+//     } catch (error) {
+//        return res.status(500).json(error)
+//     }
+// }
 
 export const allUserChats = async (req, res, next) => {
     try {
@@ -68,32 +68,32 @@ export const allUserChats = async (req, res, next) => {
     }
 }
 
-export const chatMessage = async (req, res) => {
-    try {
-        const { chatId } = req.params;
+// export const chatMessage = async (req, res) => {
+//     try {
+//         const { chatId } = req.params;
 
-        if (!chatId) {
-            return res.status(400).json({ message: "Chat ID is required" });
-        }
+//         if (!chatId) {
+//             return res.status(400).json({ message: "Chat ID is required" });
+//         }
 
-        const chat = await Chat.findById(chatId)
-            .populate("messages")
-            .sort({ updatedAt: -1 });
+//         const chat = await Chat.findById(chatId)
+//             .populate("messages")
+//             .sort({ updatedAt: -1 });
 
-        if (!chat) {
-            return res.status(404).json({ message: "Chat not found" });
-        }
+//         if (!chat) {
+//             return res.status(404).json({ message: "Chat not found" });
+//         }
 
-        return res.status(200).json({
-            success: true,
-            chat
-        });
+//         return res.status(200).json({
+//             success: true,
+//             chat
+//         });
 
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message
-        });
-    }
-};
+//     } catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "Server error",
+//             error: error.message
+//         });
+//     }
+// };
