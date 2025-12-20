@@ -1,14 +1,19 @@
-import  Register  from "../components/Register"
+import { useSelector } from "react-redux"
+import  Register  from "./Register"
 import Sidebar from "../components/Sidebar"
 import TextArea from "../components/TextArea"
-import  Login  from "./Login"
+import  Login  from "../components/Login"
 
 const Home = () => {
+  const { user } = useSelector(state => state.userSlice)
+
   return (
     <div className="w-full h-full flex ">
-
-        {/* <Register/> */}
-        <Login/>
+    
+        {
+          !user.email && <Login/>
+        }
+        
         <Sidebar/>
         <TextArea/>
     </div>
