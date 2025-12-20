@@ -6,10 +6,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { setChats } from "../store/slices/userSlice";
+import { setChats, addChat } from "../store/slices/userSlice";
 
 const Sidebar = () => {
    const { chats = [] } = useSelector((state) => state.userSlice || {});
+   const {user} = useSelector(state => state.userSlice)
    const [ chatInp, setChatInp ] = useState("")
    const navigate = useNavigate();
    const { chatId } = useParams();
@@ -31,12 +32,21 @@ const Sidebar = () => {
    };
   
    const createChat = async () => {
-   try {
-      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/chat/new`, {chatName: chatInp}, {withCredentials: true})
-      dispatch(setChats([...chats, res.data.chatName]))
-   } catch (error) {
-      console.log(error)
-   }
+      const newIndex = chats.length // index for the new chat
+      try {
+         const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/chat/new`, { chatName: chatInp }, { withCredentials: true })
+         // try to use server response as created chat object
+         const created = res?.data?.chat || res?.data || { chatName: chatInp || "New Chat" }
+         dispatch(addChat(created))
+         // navigate to new chat
+         navigate(`/c/${newIndex}`)
+      } catch (error) {
+         console.log(error)
+         // fallback: optimistic local add
+         const created = { chatName: chatInp || "New Chat" }
+         dispatch(addChat(created))
+         navigate(`/c/${newIndex}`)
+      }
    }
    return (
       <div className="w-[20%] h-full bg-[#171718] flex flex-col relative">
@@ -67,7 +77,7 @@ const Sidebar = () => {
             <div className="mt-5 flex flex-col gap-3 ">
                <h5 className="text-white/60 font-[400] text-sm ml-5">Your Chats</h5>
                <div>
-                  {chats.map((chat, idx) => {
+                  {user && chats?.map((chat, idx) => {
                      const isActive = String(idx) === String(chatId);
                      return (
                         <div

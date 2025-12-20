@@ -1,7 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-  user : []
+  user : [],
+  chats: [
+
+  ]
 }
 
 export const userSlice = createSlice({
@@ -10,10 +13,19 @@ export const userSlice = createSlice({
   reducers: {
       setUser: (state, action) => {
          state.user = action.payload
+      },
+     
+      setChats: (state, action) => {
+        state.chats = action.payload
+      },
+      addChat: (state, action) => {
+        if (!Array.isArray(state.chats)) state.chats = []
+        state.chats.push(action.payload)
       }
+
   },
 })
 
-export const { setUser } = userSlice.actions
+export const { setUser, setChats, addChat } = userSlice.actions
 
 export default userSlice.reducer
