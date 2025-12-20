@@ -1,9 +1,11 @@
 import Home from "./pages/Home";
 import { Routes, Route } from "react-router-dom"
 import useGetCurrentUser from "./hooks/useGetCurrentUser";
+import useGetUserChat from "./hooks/useGetUserChat";
 const App = () => {
 
   useGetCurrentUser()
+  useGetUserChat()
   return (
     <div className="w-screen h-screen bg-[#212121] text-text flex">   
       <Routes>

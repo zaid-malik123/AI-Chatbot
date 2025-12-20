@@ -8,7 +8,7 @@ const dispatch = useDispatch()
 const fetchCurrentUser = async ()=>{
 try {
   const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/user/currUser`,{withCredentials:true})
-  dispatch(setUser(res.data))
+  dispatch(setUser(res.data || []))
 } catch (error) {
   console.log(error)
 }
