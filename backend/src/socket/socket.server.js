@@ -40,7 +40,7 @@ export const initSocketServer = (httpServer) => {
         chat: messagePayload.chat,
         role: "user",
       });
-      const chat = await Message.find({ chat: messagePayload.chat });
+      const chat = (await Message.find({ chat: messagePayload.chat }).sort({createdAt: -1}).limit(10).lean()).reverse();
       const history = chat.map((item) => {
         return {
           role: item.role,
