@@ -7,29 +7,29 @@ import { useDispatch, useSelector } from "react-redux";
 import { useState, useRef, useEffect } from "react";
 import { IoIosLogOut } from "react-icons/io";
 import axios from "axios";
-import { setChats, addChat, setUser } from "../store/slices/userSlice";
+import { setChats, addChat, setUser, setShowNewModal, setPendingMessage, clearPendingMessage } from "../store/slices/userSlice";
 
 const Sidebar = () => {
-  const { chats = [] } = useSelector((state) => state.userSlice || {});
+  const { chats = [], showNewModal, pendingMessage, socket } = useSelector((state) => state.userSlice || {});
   const { user } = useSelector((state) => state.userSlice);
   const [isOpen, setIsOpen] = useState(false)
   const [chatInp, setChatInp] = useState("");
   const navigate = useNavigate();
   const { chatId } = useParams();
-  const [showNewModal, setShowNewModal] = useState(false);
+  // modal visibility now controlled via Redux: `showNewModal`
   const modalRef = useRef(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape") setShowNewModal(false);
+      if (e.key === "Escape") dispatch(setShowNewModal(false));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const handleOverlayClick = (e) => {
-    if (e.target === modalRef.current) setShowNewModal(false);
+    if (e.target === modalRef.current) dispatch(setShowNewModal(false));
   };
 
   const createChat = async () => {
@@ -40,15 +40,53 @@ const Sidebar = () => {
         { chatName: chatInp },
         { withCredentials: true }
       );
-      const created = res?.data?.chat ||
-        res?.data || { chatName: chatInp || "New Chat" };
+      const created = res?.data?.chat || res?.data || { chatName: chatInp || "New Chat" };
       dispatch(addChat(created));
-      navigate(`/c/${newIndex}`);
+      setChatInp("");
+      dispatch(setShowNewModal(false));
+      // navigate to created chat (prefer server _id if available)
+      const newChatId = res?.data?._id || created._id || newIndex;
+      navigate(`/c/${newChatId}`);
+
+      // if there was a pending message (user typed before creating), send it into the new chat
+      if (pendingMessage) {
+        try {
+          if (socket) {
+            socket.emit("user-message", { message: pendingMessage, chat: newChatId });
+          } else {
+            await axios.post(
+              `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
+              { message: pendingMessage, chatId: newChatId },
+              { withCredentials: true }
+            );
+          }
+        } catch (err) {
+          console.error("send pending message error", err);
+        }
+      }
+      dispatch(clearPendingMessage());
     } catch (error) {
       console.log(error);
       const created = { chatName: chatInp || "New Chat" };
       dispatch(addChat(created));
+      dispatch(setShowNewModal(false));
       navigate(`/c/${newIndex}`);
+      if (pendingMessage) {
+        try {
+          if (socket) {
+            socket.emit("user-message", { message: pendingMessage, chat: newIndex });
+          } else {
+            await axios.post(
+              `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
+              { message: pendingMessage, chatId: newIndex },
+              { withCredentials: true }
+            );
+          }
+        } catch (err) {
+          console.error("send pending message error (fallback)", err);
+        }
+      }
+      dispatch(clearPendingMessage());
     }
   };
 
@@ -76,7 +114,7 @@ const Sidebar = () => {
       <section className="w-full flex-1 mt-7 overflow-auto">
         <div className="flex flex-col gap-1">
           <button
-            onClick={() => setShowNewModal(true)}
+            onClick={() => dispatch(setShowNewModal(true))}
             className="flex items-center gap-3 px-5 py-2 hover:bg-[#212121] hover:rounded-xl text-left"
           >
             <RxPencil2 color="white" size={18} />
@@ -99,7 +137,7 @@ const Sidebar = () => {
                 return (
                   <div
                     key={idx}
-                    onClick={() => navigate(`/c/${idx}`)}
+                    onClick={() => navigate(`/c/${chat._id}`)}
                     className={`flex items-center gap-3 px-5 py-2 hover:rounded-xl ${
                       isActive ? "bg-[#212121]" : ""
                     }`}
@@ -138,7 +176,7 @@ const Sidebar = () => {
                   Create new chat
                 </h3>
                 <button
-                  onClick={() => setShowNewModal(false)}
+                  onClick={() => dispatch(setShowNewModal(false))}
                   className="text-white/70 hover:text-white"
                 >
                   Close
@@ -155,7 +193,7 @@ const Sidebar = () => {
               />
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setShowNewModal(false)}
+                  onClick={() => dispatch(setShowNewModal(false))}
                   className="px-4 py-2 rounded-md bg-[#2f2f2f] text-white"
                 >
                   Cancel
@@ -163,8 +201,8 @@ const Sidebar = () => {
                 <button
                   onClick={() => {
                     createChat();
-                    // TODO: create chat logic - for now just close
-                    setShowNewModal(false);
+                    // close modal (createChat will also attempt to close)
+                    dispatch(setShowNewModal(false));
                   }}
                   className="px-4 py-2 rounded-md bg-[#191717] text-white"
                 >

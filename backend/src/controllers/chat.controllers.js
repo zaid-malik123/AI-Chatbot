@@ -69,6 +69,22 @@ export const allUserChats = async (req, res, next) => {
     }
 }
 
+
+export const getAllMsgInSingleChat = async (req, res, next) => {
+    try {
+       const {chatId} = req.params;
+       
+       if(!chatId) return;
+
+       const message = await Message.find({chat: chatId})
+      
+       return res.status(200).json(message)
+
+    } catch (error) {
+       return res.status(500).json(error)
+    }
+}
+
 // export const chatMessage = async (req, res) => {
 //     try {
 //         const { chatId } = req.params;

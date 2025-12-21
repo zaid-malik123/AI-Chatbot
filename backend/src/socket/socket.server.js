@@ -7,7 +7,13 @@ import Message from "../models/message.model.js";
 // import Chat from "../models/chat.model.js";
 
 export const initSocketServer = (httpServer) => {
-  const io = new Server(httpServer, {});
+  const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:5173", // frontend url
+    credentials: true,
+  },
+ });
+
 
   // Socket Middleware
   io.use(async (socket, next) => {
@@ -33,6 +39,7 @@ export const initSocketServer = (httpServer) => {
   });
 
   io.on("connection", (socket) => {
+
     socket.on("user-message", async (messagePayload) => {
       await Message.create({
         user: socket.user,
