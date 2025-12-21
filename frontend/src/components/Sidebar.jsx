@@ -5,12 +5,14 @@ import { IoIosSearch } from "react-icons/io";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useState, useRef, useEffect } from "react";
+import { IoIosLogOut } from "react-icons/io";
 import axios from "axios";
-import { setChats, addChat } from "../store/slices/userSlice";
+import { setChats, addChat, setUser } from "../store/slices/userSlice";
 
 const Sidebar = () => {
   const { chats = [] } = useSelector((state) => state.userSlice || {});
   const { user } = useSelector((state) => state.userSlice);
+  const [isOpen, setIsOpen] = useState(false)
   const [chatInp, setChatInp] = useState("");
   const navigate = useNavigate();
   const { chatId } = useParams();
@@ -49,6 +51,17 @@ const Sidebar = () => {
       navigate(`/c/${newIndex}`);
     }
   };
+
+  const handleLogOut = async () => {
+     try {
+        const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/user/logout`, {withCredentials: true})
+        dispatch(setUser([]))
+        dispatch(setChats([])) 
+        setIsOpen(false)
+     } catch (error) {
+        console.log(error)
+     }
+  }
   return (
     <div className="w-[20%] h-full bg-[#171718] flex flex-col relative">
       <header className="w-full flex items-center justify-between p-5 ">
@@ -100,7 +113,7 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 flex gap-3 px-5 py-3 bg-[#171718] w-full hover:bg-[#212121]">
+        <div onClick={() => setIsOpen(prev => !prev)} className="absolute bottom-0 left-0 flex gap-3 px-5 py-3 bg-[#171718] w-full hover:bg-[#212121] cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-orange-800 flex items-center justify-center text-w">
             <h1>Z</h1>
           </div>
@@ -161,6 +174,26 @@ const Sidebar = () => {
             </div>
           </div>
         </div>
+      )}
+
+
+      {isOpen && (
+         <div className="absolute bg-[#353535] w-full bottom-[70px] rounded-2xl p-5 flex flex-col gap-5"> 
+         <div className="flex items-center gap-2">
+             <div className="w-8 h-8 rounded-full bg-orange-800 flex items-center justify-center text-w">
+            <h1 className="text-white">{user?.userName?.slice(0,1)}</h1>
+          </div>
+          <div className="text-white flex flex-col gap-1">
+            <span className="font-[300] text-md">{user.userName}</span>
+            <span className="font-[300] text-sm">{user.email}</span>
+          </div>
+         </div>
+          <div className="h-[1px]  bg-[#212121]"></div>
+          <div onClick={handleLogOut} className="flex items-center gap-3 cursor-pointer">
+             <IoIosLogOut size={20} color="white" />
+             <span className="text-white font-[300]">Log Out</span>
+          </div>
+         </div>
       )}
     </div>
   );

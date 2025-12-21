@@ -1,6 +1,6 @@
 import Chat from "../models/chat.model.js";
 import Message from "../models/message.model.js";
-
+import User from "../models/user.model.js";
 
 
 export const createChat = async (req, res, next) => {
@@ -15,7 +15,13 @@ try {
             user: userId,
         }
     )
+   
+    const user = await User.findById(userId);
 
+    user.chats.push(newChat._id)
+    
+    await user.save();
+    
     return res.status(201).json(newChat)
 } catch (error) {
     return res.status(500).json(error)
