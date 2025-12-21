@@ -16,11 +16,6 @@ try {
         }
     )
    
-    const user = await User.findById(userId);
-
-    user.chats.push(newChat._id)
-    
-    await user.save();
     
     return res.status(201).json(newChat)
 } catch (error) {

@@ -20,7 +20,7 @@ const useGetUserChat = () => {
   };
   useEffect(() => {
     fetchCurrentUser();
-  }, []);
+  }, [user]);
 };
 
 export default useGetUserChat;

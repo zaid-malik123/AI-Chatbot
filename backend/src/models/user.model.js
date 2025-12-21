@@ -16,12 +16,6 @@ password: {
     required: true,
 },
 
-chats : [
-    {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Chat"
-    }
-]
 },{timestamps:true})
 
 const User = mongoose.model("User", userSchema)
