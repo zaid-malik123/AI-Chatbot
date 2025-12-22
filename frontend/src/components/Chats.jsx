@@ -11,143 +11,150 @@ const Chats = () => {
   const { chatId } = useParams();
   const { socket } = useSelector((state) => state.userSlice || {});
   const [messages, setMessages] = useState([]);
-  const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
-  // Temporary mock messages for each chatId — replace with API/store later
-  
-
   const dispatch = useDispatch();
 
+  // ================= SEND MESSAGE =================
   const userMessage = async (message) => {
     if (!message) return;
 
-    // create optimistic user message
+    // USER MESSAGE
     const userMsg = {
       id: `u-${Date.now()}`,
       role: "user",
       message,
+      createdAt: new Date().toISOString(),
+    };
+
+    // AI PLACEHOLDER (TYPING)
+    const aiPlaceholder = {
+      id: `ai-${Date.now()}`,
+      role: "model",
+      message: "",
       pending: true,
       createdAt: new Date().toISOString(),
     };
-    setMessages((m) => [...m, userMsg]);
 
-    // send via socket if available, otherwise fallback to POST
+    setMessages((prev) => [...prev, userMsg, aiPlaceholder]);
+
     try {
       if (socket) {
         socket.emit("user-message", { message, chat: chatId });
       } else {
-        // fallback endpoint — replace with your send API if available
-        await axios.post(
+        const res = await axios.post(
           `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
           { message, chatId },
           { withCredentials: true }
         );
+
+        // REPLACE PLACEHOLDER
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiPlaceholder.id
+              ? {
+                  ...m,
+                  message: res.data?.message || "AI response",
+                  pending: false,
+                }
+              : m
+          )
+        );
       }
     } catch (err) {
-      console.error("send message error", err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiPlaceholder.id
+            ? { ...m, message: "Something went wrong", pending: false }
+            : m
+        )
+      );
     }
   };
 
-  // when no chat is open and user types a message, open the New Chat modal
+  // ================= EMPTY CHAT =================
   const handleEmptySend = (message) => {
     if (!message) return;
-    // store the pending message in Redux and open modal for creating chat
     dispatch(setPendingMessage(message));
     dispatch(setShowNewModal(true));
   };
 
+  // ================= GET OLD MESSAGES =================
   const getChatMessage = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/chat/get-msg/${chatId}`, {
-        withCredentials: true,
-      });
-      // assume res.data is an array of messages
+      const res = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/chat/get-msg/${chatId}`,
+        { withCredentials: true }
+      );
       setMessages(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("getChatMessage error", err);
+    } catch {
       setMessages([]);
     }
   };
 
-  // load messages when chatId changes
+  // ================= SOCKET LISTENER =================
   useEffect(() => {
+    if (!chatId) return;
     getChatMessage();
 
-    // setup socket listener once per mounted chat
-    if (socket) {
-      // keep ref for cleanup
-      socketRef.current = socket;
+    if (!socket) return;
 
-      const handler = (data) => {
-        // expect data to be { message, role: 'ai' }
-        const aiMsg = {
-          id: `ai-${Date.now()}`,
-          role: "model",
-          message: data?.res || (typeof data === "string" ? data : ""),
-          createdAt: new Date().toISOString(),
-        };
-        setMessages((m) => [...m, aiMsg]);
-        console.log(aiMsg) 
-      };
+    const handler = (data) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.pending && m.role === "model"
+            ? {
+                ...m,
+                message: data?.res || data,
+                pending: false,
+              }
+            : m
+        )
+      );
+    };
 
-      socket.on("ai-response", handler);
-      return () => {
-        socket.off("ai-response", handler);
-      };
-    }
+    socket.on("ai-response", handler);
+    return () => socket.off("ai-response", handler);
   }, [chatId, socket]);
 
-  // scroll to bottom when messages change
+  // ================= AUTO SCROLL =================
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // const messages = mockMessages[String(chatId)] || [];
-
+  // ================= UI =================
   return (
     <div
-      className={`h-full w-full md:w-[70%]  flex flex-col ${
+      className={`h-full w-full md:w-[70%] flex flex-col ${
         chatId ? "justify-start" : "justify-center items-center"
-      } `}
+      }`}
     >
-      {/* Empty state */}
       {!chatId && (
         <div className="flex flex-col gap-10 w-full px-5 max-w-xl">
           <h2 className="text-white text-3xl text-center">
             What’s on the agenda today?
           </h2>
-
           <ChatInput userMessage={handleEmptySend} />
         </div>
       )}
 
-      {/* Chat opened */}
       {chatId && (
-        <div className="w-full max-w-3xl mb-6 flex flex-col px-4 py-6 h-full ">
-          {/* messages container: scrollable, top-to-bottom */}
-          <div className="flex-1 mb-4 overflow-y-auto  space-y-2">
-            {/* {messages?.length === 0 && (
-              <div className="text-white/60 text-center py-24">
-                No messages yet. Say hi!
-              </div>
-            )} */}
-
-              <div className="flex flex-col">
-                {messages?.map((m) =>
-                  m.role === "user" ? (
-                    <UserMessage key={m.id} text={m.message} />
-                  ) : (
-                    <AIMessage key={m.id} text={m.message} />
-                  )
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+        <div className="w-full max-w-3xl flex flex-col px-4 py-6 h-full">
+          <div className="flex-1 overflow-y-auto space-y-2">
+            {messages.map((m) =>
+              m.role === "user" ? (
+                <UserMessage key={m.id} text={m.message} />
+              ) : (
+                <AIMessage
+                  key={m.id}
+                  text={m.message}
+                  pending={m.pending}
+                />
+              )
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
-          <div  className="mt-2">
-            {/* input stays at bottom */}
+          <div className="mt-2">
             <ChatInput userMessage={userMessage} />
           </div>
         </div>
