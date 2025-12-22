@@ -108,13 +108,13 @@ const Chats = () => {
 
   return (
     <div
-      className={`h-full w-[70%]  flex flex-col ${
+      className={`h-full w-full md:w-[70%]  flex flex-col ${
         chatId ? "justify-start" : "justify-center items-center"
       } `}
     >
       {/* Empty state */}
       {!chatId && (
-        <div className="flex flex-col gap-10 w-full max-w-xl">
+        <div className="flex flex-col gap-10 w-full px-5 max-w-xl">
           <h2 className="text-white text-3xl text-center">
             What’s on the agenda today?
           </h2>

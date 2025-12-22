@@ -11,7 +11,7 @@ try {
     
     const newChat = await Chat.create(
         {
-            chatName,
+            chatName : chatName || "New Chat",
             user: userId,
         }
     )

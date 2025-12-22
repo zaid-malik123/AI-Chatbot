@@ -7,12 +7,27 @@ import { useDispatch, useSelector } from "react-redux";
 import { useState, useRef, useEffect } from "react";
 import { IoIosLogOut } from "react-icons/io";
 import axios from "axios";
-import { setChats, addChat, setUser, setShowNewModal, setPendingMessage, clearPendingMessage } from "../store/slices/userSlice";
+import {
+  setChats,
+  addChat,
+  setUser,
+  setShowNewModal,
+  setPendingMessage,
+  clearPendingMessage,
+  setToogleSidebar,
+} from "../store/slices/userSlice";
 
 const Sidebar = () => {
-  const { chats = [], showNewModal, pendingMessage, socket } = useSelector((state) => state.userSlice || {});
+  const {
+    chats = [],
+    showNewModal,
+    pendingMessage,
+    socket,
+    toogleSidebar,
+  } = useSelector((state) => state.userSlice || {});
+  console.log(toogleSidebar);
   const { user } = useSelector((state) => state.userSlice);
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
   const [chatInp, setChatInp] = useState("");
   const navigate = useNavigate();
   const { chatId } = useParams();
@@ -40,7 +55,8 @@ const Sidebar = () => {
         { chatName: chatInp },
         { withCredentials: true }
       );
-      const created = res?.data?.chat || res?.data || { chatName: chatInp || "New Chat" };
+      const created = res?.data?.chat ||
+        res?.data || { chatName: chatInp || "New Chat" };
       dispatch(addChat(created));
       setChatInp("");
       dispatch(setShowNewModal(false));
@@ -52,7 +68,10 @@ const Sidebar = () => {
       if (pendingMessage) {
         try {
           if (socket) {
-            socket.emit("user-message", { message: pendingMessage, chat: newChatId });
+            socket.emit("user-message", {
+              message: pendingMessage,
+              chat: newChatId,
+            });
           } else {
             await axios.post(
               `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
@@ -74,7 +93,10 @@ const Sidebar = () => {
       if (pendingMessage) {
         try {
           if (socket) {
-            socket.emit("user-message", { message: pendingMessage, chat: newIndex });
+            socket.emit("user-message", {
+              message: pendingMessage,
+              chat: newIndex,
+            });
           } else {
             await axios.post(
               `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
@@ -91,23 +113,35 @@ const Sidebar = () => {
   };
 
   const handleLogOut = async () => {
-     try {
-        const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/user/logout`, {withCredentials: true})
-        dispatch(setUser([]))
-        dispatch(setChats([])) 
-        setIsOpen(false)
-     } catch (error) {
-        console.log(error)
-     }
-  }
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/user/logout`,
+        { withCredentials: true }
+      );
+      dispatch(setUser([]));
+      dispatch(setChats([]));
+      setIsOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
-    <div className="w-[20%] h-full bg-[#171718] flex flex-col relative">
+    <div
+      className={`
+    fixed top-0 left-0 h-full bg-[#171718] z-40
+    w-[80%] max-w-xs
+    transform transition-transform duration-300
+    ${toogleSidebar ? "translate-x-0" : "-translate-x-full"}
+    md:static md:translate-x-0 md:w-[20%] md:flex
+    flex flex-col
+  `}
+    >
       <header className="w-full flex items-center justify-between p-5 ">
         <div>
           <RiChatVoiceAiLine color="white" size={25} />
         </div>
         <div>
-          <BsReverseLayoutSidebarReverse color="white" size={20} />
+          <BsReverseLayoutSidebarReverse onClick={() => dispatch(setToogleSidebar(false))} color="white" size={20} />
         </div>
       </header>
 
@@ -151,15 +185,18 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <div onClick={() => setIsOpen(prev => !prev)} className="absolute bottom-0 left-0 flex gap-3 px-5 py-3 bg-[#171718] w-full hover:bg-[#212121] cursor-pointer">
+        {user.email && <div
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="absolute bottom-0 left-0 flex gap-3 px-5 py-3 bg-[#171718] w-full hover:bg-[#212121] cursor-pointer"
+        >
           <div className="w-10 h-10 rounded-full bg-orange-800 flex items-center justify-center text-w">
-            <h1>Z</h1>
+            <h1>{user.userName.slice(0, 1)}</h1>
           </div>
           <div className="text-white flex flex-col gap-1">
-            <span className="font-[300] text-md">Zaid Malik</span>
+            <span className="font-[300] text-md">{user.userName}</span>
             <span className="font-[300] text-sm">Free</span>
           </div>
-        </div>
+        </div>}
       </section>
 
       {/* New Chat full-screen modal overlay */}
@@ -167,7 +204,7 @@ const Sidebar = () => {
         <div
           ref={modalRef}
           onClick={handleOverlayClick}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          className="fixed  inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
         >
           <div className="bg-transparent w-full h-full flex items-center justify-center">
             <div className="bg-[#212121] rounded-xl w-[90%] max-w-2xl p-8 shadow-lg">
@@ -214,24 +251,29 @@ const Sidebar = () => {
         </div>
       )}
 
-
       {isOpen && (
-         <div className="absolute bg-[#353535] w-full bottom-[70px] rounded-2xl p-5 flex flex-col gap-5"> 
-         <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-full bg-orange-800 flex items-center justify-center text-w">
-            <h1 className="text-white">{user?.userName?.slice(0,1)}</h1>
+        <div className="absolute bg-[#353535] w-full bottom-[70px] rounded-2xl p-5 flex flex-col gap-5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-orange-800 flex items-center justify-center text-w">
+              <h1 className="text-white">{user?.userName?.slice(0, 1)}</h1>
+            </div>
+            <div className="text-white flex flex-col gap-1">
+              <span className="font-[300] text-md">{user.userName}</span>
+              <span className="font-[300] text-sm">{user.email}</span>
+            </div>
           </div>
-          <div className="text-white flex flex-col gap-1">
-            <span className="font-[300] text-md">{user.userName}</span>
-            <span className="font-[300] text-sm">{user.email}</span>
-          </div>
-         </div>
           <div className="h-[1px]  bg-[#212121]"></div>
-          <div onClick={handleLogOut} className="flex items-center gap-3 cursor-pointer">
-             <IoIosLogOut size={20} color="white" />
-             <span className="text-white font-[300]">Log Out</span>
+          <div
+            onClick={() => {
+            handleLogOut()
+            dispatch(setToogleSidebar(false))
+            }}
+            className="flex items-center gap-3 cursor-pointer"
+          >
+            <IoIosLogOut size={20} color="white" />
+            <span className="text-white font-[300]">Log Out</span>
           </div>
-         </div>
+        </div>
       )}
     </div>
   );

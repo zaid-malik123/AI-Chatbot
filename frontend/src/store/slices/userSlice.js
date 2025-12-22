@@ -6,6 +6,7 @@ const initialState = {
   socket: null,
   showNewModal: false,
   pendingMessage: null,
+  toogleSidebar: false,
 }
 
 export const userSlice = createSlice({
@@ -35,11 +36,14 @@ export const userSlice = createSlice({
       },
       clearPendingMessage: (state) => {
         state.pendingMessage = null
-      }
-
+      },
+      
+     setToogleSidebar: (state) => {
+      state.toogleSidebar = !state.toogleSidebar
+     }
   },
 })
 
-export const { setUser, setChats, addChat, setSocket, setShowNewModal, setPendingMessage, clearPendingMessage } = userSlice.actions
+export const { setUser, setChats, addChat, setSocket, setShowNewModal, setPendingMessage, clearPendingMessage, setToogleSidebar } = userSlice.actions
 
 export default userSlice.reducer
