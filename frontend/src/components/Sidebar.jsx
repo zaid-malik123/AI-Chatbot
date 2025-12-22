@@ -17,7 +17,7 @@ import {
   setToogleSidebar,
 } from "../store/slices/userSlice";
 
-const Sidebar = () => {
+const Sidebar = ({chatInp}) => {
   const {
     chats = [],
     showNewModal,
@@ -25,10 +25,8 @@ const Sidebar = () => {
     socket,
     toogleSidebar,
   } = useSelector((state) => state.userSlice || {});
-  console.log(toogleSidebar);
   const { user } = useSelector((state) => state.userSlice);
   const [isOpen, setIsOpen] = useState(false);
-  const [chatInp, setChatInp] = useState("");
   const navigate = useNavigate();
   const { chatId } = useParams();
   // modal visibility now controlled via Redux: `showNewModal`
@@ -47,70 +45,66 @@ const Sidebar = () => {
     if (e.target === modalRef.current) dispatch(setShowNewModal(false));
   };
 
-  const createChat = async () => {
-    const newIndex = chats.length; // index for the new chat
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/chat/new`,
-        { chatName: chatInp },
-        { withCredentials: true }
-      );
-      const created = res?.data?.chat ||
-        res?.data || { chatName: chatInp || "New Chat" };
-      dispatch(addChat(created));
-      setChatInp("");
-      dispatch(setShowNewModal(false));
-      // navigate to created chat (prefer server _id if available)
-      const newChatId = res?.data?._id || created._id || newIndex;
-      navigate(`/c/${newChatId}`);
+  // const createChat = async () => {
+  //   try {
+  //     const res = await axios.post(
+  //       `${import.meta.env.VITE_SERVER_URL}/api/chat/new`,
+  //       { chatName: chatInp },
+  //       { withCredentials: true }
+  //     );
+  //     const created = res?.data?.chat ||
+  //       res?.data || { chatName: chatInp || "New Chat" };
+  //     dispatch(addChat(created));
+  //     dispatch(setShowNewModal(false));
+  //     const newChatId = res?.data?._id || created._id || newIndex;
+  //     navigate(`/c/${newChatId}`);
 
-      // if there was a pending message (user typed before creating), send it into the new chat
-      if (pendingMessage) {
-        try {
-          if (socket) {
-            socket.emit("user-message", {
-              message: pendingMessage,
-              chat: newChatId,
-            });
-          } else {
-            await axios.post(
-              `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
-              { message: pendingMessage, chatId: newChatId },
-              { withCredentials: true }
-            );
-          }
-        } catch (err) {
-          console.error("send pending message error", err);
-        }
-      }
-      dispatch(clearPendingMessage());
-    } catch (error) {
-      console.log(error);
-      const created = { chatName: chatInp || "New Chat" };
-      dispatch(addChat(created));
-      dispatch(setShowNewModal(false));
-      navigate(`/c/${newIndex}`);
-      if (pendingMessage) {
-        try {
-          if (socket) {
-            socket.emit("user-message", {
-              message: pendingMessage,
-              chat: newIndex,
-            });
-          } else {
-            await axios.post(
-              `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
-              { message: pendingMessage, chatId: newIndex },
-              { withCredentials: true }
-            );
-          }
-        } catch (err) {
-          console.error("send pending message error (fallback)", err);
-        }
-      }
-      dispatch(clearPendingMessage());
-    }
-  };
+  //     if (pendingMessage) {
+  //       try {
+  //         if (socket) {
+  //           socket.emit("user-message", {
+  //             message: pendingMessage,
+  //             chat: newChatId,
+  //           });
+  //         } else {
+  //           await axios.post(
+  //             `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
+  //             { message: pendingMessage, chatId: newChatId },
+  //             { withCredentials: true }
+  //           );
+  //         }
+  //       } catch (err) {
+  //         console.error("send pending message error", err);
+  //       }
+  //     }
+  //     dispatch(clearPendingMessage());
+  //   } catch (error) {
+  //     console.log(error);
+  //     const created = { chatName: chatInp || "New Chat" };
+  //     dispatch(addChat(created));
+  //     dispatch(setShowNewModal(false));
+  //     navigate(`/c/${newIndex}`);
+  //     if (pendingMessage) {
+  //       try {
+  //         if (socket) {
+  //           socket.emit("user-message", {
+  //             message: pendingMessage,
+  //             chat: newIndex,
+  //           });
+  //         } else {
+  //           await axios.post(
+  //             `${import.meta.env.VITE_SERVER_URL}/api/chat/send`,
+  //             { message: pendingMessage, chatId: newIndex },
+  //             { withCredentials: true }
+  //           );
+  //         }
+  //       } catch (err) {
+  //         console.error("send pending message error (fallback)", err);
+  //       }
+  //     }
+  //     dispatch(clearPendingMessage());
+  //   }
+  // };
 
   const handleLogOut = async () => {
     try {
@@ -199,57 +193,6 @@ const Sidebar = () => {
         </div>}
       </section>
 
-      {/* New Chat full-screen modal overlay */}
-      {showNewModal && (
-        <div
-          ref={modalRef}
-          onClick={handleOverlayClick}
-          className="fixed  inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-        >
-          <div className="bg-transparent w-full h-full flex items-center justify-center">
-            <div className="bg-[#212121] rounded-xl w-[90%] max-w-2xl p-8 shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-white text-xl font-medium">
-                  Create new chat
-                </h3>
-                <button
-                  onClick={() => dispatch(setShowNewModal(false))}
-                  className="text-white/70 hover:text-white"
-                >
-                  Close
-                </button>
-              </div>
-              <p className="text-white/70 mb-4">
-                Start a new conversation. Enter a title below.
-              </p>
-              <input
-                onChange={(e) => setChatInp(e.target.value)}
-                value={chatInp}
-                className="w-full px-4 py-3 rounded-md bg-[#2b2b2b] text-white mb-4 outline-0"
-                placeholder="Chat title (optional)"
-              />
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => dispatch(setShowNewModal(false))}
-                  className="px-4 py-2 rounded-md bg-[#2f2f2f] text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    createChat();
-                    // close modal (createChat will also attempt to close)
-                    dispatch(setShowNewModal(false));
-                  }}
-                  className="px-4 py-2 rounded-md bg-[#191717] text-white"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isOpen && (
         <div className="absolute bg-[#353535] w-full bottom-[70px] rounded-2xl p-5 flex flex-col gap-5">
