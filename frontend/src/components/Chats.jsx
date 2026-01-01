@@ -14,11 +14,9 @@ const Chats = () => {
   const messagesEndRef = useRef(null);
   const dispatch = useDispatch();
 
-  // ================= SEND MESSAGE =================
   const userMessage = async (message) => {
     if (!message) return;
 
-    // USER MESSAGE
     const userMsg = {
       id: `u-${Date.now()}`,
       role: "user",
@@ -26,7 +24,6 @@ const Chats = () => {
       createdAt: new Date().toISOString(),
     };
 
-    // AI PLACEHOLDER (TYPING)
     const aiPlaceholder = {
       id: `ai-${Date.now()}`,
       role: "model",
@@ -47,7 +44,6 @@ const Chats = () => {
           { withCredentials: true }
         );
 
-        // REPLACE PLACEHOLDER
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiPlaceholder.id
@@ -71,14 +67,12 @@ const Chats = () => {
     }
   };
 
-  // ================= EMPTY CHAT =================
   const handleEmptySend = (message) => {
     if (!message) return;
     dispatch(setPendingMessage(message));
     dispatch(setShowNewModal(true));
   };
 
-  // ================= GET OLD MESSAGES =================
   const getChatMessage = async () => {
     try {
       const res = await axios.get(
@@ -91,7 +85,6 @@ const Chats = () => {
     }
   };
 
-  // ================= SOCKET LISTENER =================
   useEffect(() => {
     if (!chatId) return;
     getChatMessage();
@@ -116,12 +109,10 @@ const Chats = () => {
     return () => socket.off("ai-response", handler);
   }, [chatId, socket]);
 
-  // ================= AUTO SCROLL =================
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ================= UI =================
   return (
     <div
       className={`h-full w-full md:w-[70%] flex flex-col ${
